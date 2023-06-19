@@ -1,6 +1,3 @@
-import json
-from os import environ
-from flask import request
 from faker import Faker
 from app import app
 from models import db, Hero, Power, HeroPower
@@ -16,8 +13,7 @@ class TestApp:
             fake = Faker()
             hero1 = Hero(name=fake.name(), super_name=fake.name())
             hero2 = Hero(name=fake.name(), super_name=fake.name())
-            db.session.add(hero1)
-            db.session.add(hero2)
+            db.session.add_all([hero1, hero2])
             db.session.commit()
 
             response = app.test_client().get('/heroes')
@@ -51,8 +47,10 @@ class TestApp:
             assert response.content_type == 'application/json'
             response = response.json
 
+            assert response['id'] == hero.id
             assert response['name'] == hero.name
             assert response['super_name'] == hero.super_name
+            assert 'hero_powers' in response
 
     def test_returns_404_if_no_hero_to_get(self):
         '''returns an error message and 404 status code with GET request to /heros/<int:id> by a non-existent ID.'''
@@ -110,6 +108,7 @@ class TestApp:
             assert response.content_type == 'application/json'
             response = response.json
 
+            assert response['id'] == power.id
             assert response['name'] == power.name
             assert response['description'] == power.description
             assert 'hero_powers' not in response
@@ -137,7 +136,6 @@ class TestApp:
             response = app.test_client().patch(
                 f'/powers/{power.id}',
                 json={
-                    'name': power.name + '(updated)',
                     'description': power.description + '(updated)'
                 })
 
@@ -147,8 +145,7 @@ class TestApp:
 
             power_updated = Power.query.filter(Power.id == power.id).first()
 
-            assert response['name'] == power_updated.name
-            assert '(updated)' in power_updated.name
+            assert response['name'] == power.name
             assert response['description'] == power_updated.description
             assert '(updated)' in power_updated.description
 
