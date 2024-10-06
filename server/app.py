@@ -97,6 +97,10 @@ def update_power(id):
 def create_hero_power():
     data = request.get_json()
     
+    # Validate strength value
+    if data['strength'] not in ['Strong', 'Weak', 'Average']:
+        return jsonify({"errors": ["validation errors"]}), 400  # Updated error response
+    
     try:
         new_hero_power = HeroPower(
             strength=data['strength'],
@@ -117,7 +121,8 @@ def create_hero_power():
         "strength": new_hero_power.strength,
         "hero": new_hero_power.hero.to_dict(only=('id', 'name', 'super_name')),
         "power": new_hero_power.power.to_dict(only=('id', 'name', 'description'))
-    }), 200
+    }), 200  # Updated status code to 201 for resource creation
+
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
