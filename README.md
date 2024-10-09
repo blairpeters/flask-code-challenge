@@ -348,5 +348,8 @@ data, along with the appropriate HTTP status code:
   "errors": ["validation errors"]
 }
 ```
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3fd34fc (first commit)
 # flask-code-challenge
