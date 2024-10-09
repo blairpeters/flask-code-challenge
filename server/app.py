@@ -1,28 +1,40 @@
 #!/usr/bin/env python3
 
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request, jsonify
 from flask_migrate import Migrate
-from flask_restful import Api, Resource
 from models import db, Hero, Power, HeroPower
 from sqlalchemy.exc import IntegrityError
 import os
 
+# Define the base directory for the database
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Set up the database URI, defaulting to a local SQLite database
 DATABASE = os.environ.get(
     "DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}"
 )
 
+# Initialize Flask app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
+# Initialize Flask-Migrate and bind it to the app and db
 migrate = Migrate(app, db)
 db.init_app(app)
 
 @app.route('/')
 def index():
     return '<h1>Code challenge</h1>'
+
+# Helper function to retrieve a hero by ID
+def get_hero_by_id(id):
+    return db.session.get(Hero, id)
+
+# Helper function to retrieve a power by ID
+def get_power_by_id(id):
+    return db.session.get(Power, id)
 
 # GET /heroes
 @app.route('/heroes', methods=['GET'])
@@ -33,7 +45,7 @@ def get_heroes():
 # GET /heroes/:id
 @app.route('/heroes/<int:id>', methods=['GET'])
 def get_hero(id):
-    hero = Hero.query.get(id)
+    hero = get_hero_by_id(id)
     if hero is None:
         return jsonify({"error": "Hero not found"}), 404
     return jsonify(hero.to_dict())
@@ -47,24 +59,23 @@ def get_powers():
 # GET /powers/:id
 @app.route('/powers/<int:id>', methods=['GET'])
 def get_power(id):
-    power = Power.query.get(id)
+    power = get_power_by_id(id)
     
-    if not power:
+    if power is None:
         return {'error': 'Power not found'}, 404
 
-    # Serialize the power, excluding 'hero_powers'
     return {
         'id': power.id,
         'name': power.name,
         'description': power.description
     }
 
-
+# PATCH /powers/:id
 @app.route('/powers/<int:id>', methods=['PATCH'])
 def update_power(id):
-    power = Power.query.get(id)
+    power = get_power_by_id(id)
 
-    if not power:
+    if power is None:
         return {'error': 'Power not found'}, 404
 
     data = request.get_json()
@@ -73,7 +84,7 @@ def update_power(id):
     # Validate description length
     if 'description' in data:
         if not isinstance(data['description'], str) or len(data['description']) < 20:
-            errors.append('validation errors')  # Change to generic error message
+            errors.append('validation errors')
 
     if errors:
         return {'errors': errors}, 400
@@ -110,9 +121,8 @@ def create_hero_power():
         db.session.add(new_hero_power)
         db.session.commit()
     except IntegrityError:
+        db.session.rollback()
         return jsonify({"errors": ["validation errors"]}), 400
-    except ValueError as e:
-        return jsonify({"errors": [str(e)]}), 400
 
     return jsonify({
         "id": new_hero_power.id,
@@ -121,8 +131,7 @@ def create_hero_power():
         "strength": new_hero_power.strength,
         "hero": new_hero_power.hero.to_dict(only=('id', 'name', 'super_name')),
         "power": new_hero_power.power.to_dict(only=('id', 'name', 'description'))
-    }), 200  # Updated status code to 201 for resource creation
-
+    }), 201  # Updated status code to 201 for resource creation
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
