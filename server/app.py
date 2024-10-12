@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from models import db, Hero, Power, HeroPower
 from sqlalchemy.exc import IntegrityError
+
 import os
 
 # Define the base directory for the database

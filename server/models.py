@@ -19,7 +19,7 @@ class Hero(db.Model, SerializerMixin):
     name = db.Column(db.String, nullable=False)
     super_name = db.Column(db.String, nullable=False)
 
-    # Establish relationship with HeroPower
+    # Establish relationship with HeroPower many to one 
     hero_powers = db.relationship('HeroPower', back_populates='hero', cascade='all, delete-orphan')
 
     # Define serialization rules to limit recursion depth
