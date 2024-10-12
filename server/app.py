@@ -10,7 +10,7 @@ import os
 # Define the base directory for the database
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Set up the database URI, defaulting to a local SQLite database
+# Set up the database URI, defaulting to a local SQLite database.
 DATABASE = os.environ.get(
     "DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}"
 )
